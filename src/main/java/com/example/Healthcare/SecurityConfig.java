@@ -40,7 +40,9 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOrigins(
-            List.of("http://localhost:5173")
+            List.of("http://localhost:5173",
+            "https://health-care-frontend-9ni5j5gyj-mintu5.vercel.app")
+
         );
 
         configuration.setAllowedMethods(
