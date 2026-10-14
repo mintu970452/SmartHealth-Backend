@@ -1,3 +1,4 @@
+
 package com.example.Healthcare.Service;
 
 import org.springframework.stereotype.Service;
@@ -9,6 +10,8 @@ import com.example.Healthcare.Repository.AppointmentRepository;
 import com.example.Healthcare.Repository.PatientRepository;
 import com.example.Healthcare.Repository.DoctorRepository;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @Service
@@ -68,8 +71,7 @@ public class AppointmentService {
             return null;
         }
 
-        if (!isThirtyMinuteSlot(
-                appointment.getAppointmentTime())) {
+        if (!isThirtyMinuteSlot(appointment.getAppointmentTime())) {
             return null;
         }
 
@@ -77,8 +79,7 @@ public class AppointmentService {
                 appointmentRepository.isSlotBooked(
                         doctorId,
                         appointment.getAppointmentDate(),
-                        appointment.getAppointmentTime()
-                );
+                        appointment.getAppointmentTime());
 
         if (alreadyBooked) {
             return null;
@@ -133,17 +134,13 @@ public class AppointmentService {
         Appointment existingAppointment =
                 appointmentRepository.findById(id).orElse(null);
 
-        if (existingAppointment == null) {
-            return null;
-        }
-
-        if (existingAppointment.getPatient() == null) {
+        if (existingAppointment == null ||
+                existingAppointment.getPatient() == null) {
             return null;
         }
 
         if (!existingAppointment.getPatient()
-                .getEmail()
-                .equals(patientEmail)) {
+                .getEmail().equals(patientEmail)) {
             return null;
         }
 
@@ -154,18 +151,15 @@ public class AppointmentService {
 
         Doctor doctor =
                 doctorRepository.findById(
-                        appointment.getDoctor().getId()
-                ).orElse(null);
+                        appointment.getDoctor().getId())
+                        .orElse(null);
 
         if (doctor == null) {
             return null;
         }
 
-        if (!isValidDate(appointment.getAppointmentDate())) {
-            return null;
-        }
-
-        if (!isValidTime(appointment.getAppointmentTime())) {
+        if (!isValidDate(appointment.getAppointmentDate()) ||
+                !isValidTime(appointment.getAppointmentTime())) {
             return null;
         }
 
@@ -176,8 +170,7 @@ public class AppointmentService {
             return null;
         }
 
-        if (!isThirtyMinuteSlot(
-                appointment.getAppointmentTime())) {
+        if (!isThirtyMinuteSlot(appointment.getAppointmentTime())) {
             return null;
         }
 
@@ -185,26 +178,24 @@ public class AppointmentService {
                 appointmentRepository.isSlotBooked(
                         doctor.getId(),
                         appointment.getAppointmentDate(),
-                        appointment.getAppointmentTime()
-                );
+                        appointment.getAppointmentTime());
 
-        if (alreadyBooked &&
-                !(existingAppointment.getDoctor().getId()
+        boolean sameSlot =
+                existingAppointment.getDoctor() != null
+                && existingAppointment.getDoctor().getId()
                         .equals(doctor.getId())
-                        && existingAppointment
-                                .getAppointmentDate()
-                                .equals(appointment.getAppointmentDate())
-                        && existingAppointment
-                                .getAppointmentTime()
-                                .equals(appointment.getAppointmentTime()))) {
+                && existingAppointment.getAppointmentDate()
+                        .equals(appointment.getAppointmentDate())
+                && existingAppointment.getAppointmentTime()
+                        .equals(appointment.getAppointmentTime());
+
+        if (alreadyBooked && !sameSlot) {
             return null;
         }
 
         existingAppointment.setDoctor(doctor);
-
         existingAppointment.setAppointmentDate(
                 appointment.getAppointmentDate());
-
         existingAppointment.setAppointmentTime(
                 appointment.getAppointmentTime());
 
@@ -233,17 +224,13 @@ public class AppointmentService {
         Appointment appointment =
                 appointmentRepository.findById(id).orElse(null);
 
-        if (appointment == null) {
-            return false;
-        }
-
-        if (appointment.getPatient() == null) {
+        if (appointment == null ||
+                appointment.getPatient() == null) {
             return false;
         }
 
         if (!appointment.getPatient()
-                .getEmail()
-                .equals(patientEmail)) {
+                .getEmail().equals(patientEmail)) {
             return false;
         }
 
@@ -276,17 +263,13 @@ public class AppointmentService {
         Appointment appointment =
                 appointmentRepository.findById(id).orElse(null);
 
-        if (appointment == null) {
-            return false;
-        }
-
-        if (appointment.getDoctor() == null) {
+        if (appointment == null ||
+                appointment.getDoctor() == null) {
             return false;
         }
 
         if (!appointment.getDoctor()
-                .getEmail()
-                .equals(doctorEmail)) {
+                .getEmail().equals(doctorEmail)) {
             return false;
         }
 
@@ -303,7 +286,7 @@ public class AppointmentService {
         }
 
         try {
-            java.time.LocalDate.parse(date);
+            LocalDate.parse(date);
             return true;
         } catch (Exception e) {
             return false;
@@ -317,7 +300,7 @@ public class AppointmentService {
         }
 
         try {
-            java.time.LocalTime.parse(time);
+            LocalTime.parse(time);
             return true;
         } catch (Exception e) {
             return false;
@@ -326,11 +309,10 @@ public class AppointmentService {
 
     private boolean isThirtyMinuteSlot(String time) {
 
-        java.time.LocalTime appointmentTime =
-                java.time.LocalTime.parse(time);
+        LocalTime appointmentTime = LocalTime.parse(time);
 
-        return appointmentTime.getMinute() == 0 ||
-                appointmentTime.getMinute() == 30;
+        return appointmentTime.getMinute() == 0
+                || appointmentTime.getMinute() == 30;
     }
 
     private boolean isWithinDoctorShift(
@@ -338,23 +320,26 @@ public class AppointmentService {
             String shiftStart,
             String shiftEnd) {
 
-        if (shiftStart == null ||
-                shiftEnd == null ||
-                shiftStart.isBlank() ||
-                shiftEnd.isBlank()) {
+        if (shiftStart == null || shiftEnd == null
+                || shiftStart.isBlank() || shiftEnd.isBlank()) {
             return false;
         }
 
-        java.time.LocalTime appointment =
-                java.time.LocalTime.parse(appointmentTime);
+        LocalTime appointment = LocalTime.parse(appointmentTime);
+        LocalTime start = LocalTime.parse(shiftStart);
+        LocalTime end = LocalTime.parse(shiftEnd);
 
-        java.time.LocalTime start =
-                java.time.LocalTime.parse(shiftStart);
+        if (start.isBefore(end)) {
+            return !appointment.isBefore(start)
+                    && appointment.isBefore(end);
+        }
 
-        java.time.LocalTime end =
-                java.time.LocalTime.parse(shiftEnd);
+        if (start.isAfter(end)) {
+            return !appointment.isBefore(start)
+                    || appointment.isBefore(end);
+        }
 
-        return !appointment.isBefore(start)
-                && appointment.isBefore(end);
+        return false;
     }
 }
+
